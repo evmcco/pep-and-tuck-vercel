@@ -68,7 +68,7 @@ export function openingPrompt(question: string, context?: string): string {
   const prior = context?.trim()
     ? `\n\nEarlier in this chat, for context:\n${context.trim()}`
     : "";
-  return `The user asked: ${question}${prior}\n\nAnswer the user. You are opening the debate; ${SPEAKER_NAMES.pep} or ${SPEAKER_NAMES.tuck} will push back on your answer next.`;
+  return `The user asked: ${question}${prior}\n\nAnswer the user. You are opening the debate; your sibling will push back on your answer next.`;
 }
 
 export function challengerPrompt(
