@@ -1,11 +1,13 @@
 # eve debate
 
-A standalone [eve](https://eve.dev) + Next.js app. Ask any question: one agent
-answers, the other jumps in and pushes back, and the two have a short, friendly
-back-and-forth. When they settle, a one-line **Bottom line** appears.
+A standalone [eve](https://eve.dev) + Next.js app starring **Pep & Tuck**, two
+sibling dogs. Ask any question: one pup answers, the other jumps in and pushes
+back, and the two have a short, friendly back-and-forth. When they settle, a
+one-line **Bottom line** appears.
 
-The debaters are **Claude** (`anthropic/claude-sonnet-5.5`) and **GPT**
-(`openai/gpt-6-sol`), moderated by a root agent on `openai/gpt-5.4-mini`.
+**Pep** — the fiery, sassy little sister — runs on GPT (`openai/gpt-6-sol`).
+**Tuck** — the stoic, steadfast big brother — runs on Claude
+(`anthropic/claude-sonnet-5.5`). A root moderator runs on `openai/gpt-5.4-mini`.
 
 ## Architecture
 
@@ -20,7 +22,7 @@ debate workflow tool
     │  pickOpener()  (random, in a workflow step)
     ▼
  opener ──► challenger ──► opener ──► challenger ──► …
- (Claude/GPT)   relay each other's latest reply every turn
+(Pep/Tuck)   relay each other's latest reply every turn
     │
     ▼  ends early when a reply's STANCE is `agree`, capped at MAX_TURNS
 root agent writes the one-line "Bottom line"
@@ -47,8 +49,8 @@ agent/
   lib/skills.ts       shared skill markdown
   lib/instructions.ts shared subagent instruction builder
   lib/debate.test.ts  unit tests (node --test)
-  subagents/claude/   Claude debater + tools + skills
-  subagents/gpt/      GPT debater + tools + skills
+  subagents/pep/      Pep (GPT) debater + tools + skills
+  subagents/tuck/     Tuck (Claude) debater + tools + skills
 apps/web/             Next.js chat UI
 ```
 
@@ -70,8 +72,8 @@ Models go through Vercel AI Gateway. Either set `AI_GATEWAY_API_KEY` in
 
 ## Tuning
 
-- Models: `agent/agent.ts` (moderator), `agent/subagents/claude/agent.ts`,
-  `agent/subagents/gpt/agent.ts`.
+- Models: `agent/agent.ts` (moderator), `agent/subagents/pep/agent.ts`,
+  `agent/subagents/tuck/agent.ts`.
 - Turn cap: `MAX_TURNS` in `agent/lib/debate.ts`.
 - Skills: markdown in `agent/lib/skills.ts`, declared per agent under
   `agent/subagents/<name>/skills/`.

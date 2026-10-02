@@ -5,8 +5,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "eve debate",
-  description: "Two agents debate your questions, built with eve.",
+  title: "Pep & Tuck",
+  description: "Pep and Tuck, two sibling dogs, debate your questions. Built with eve.",
 };
 
 export const viewport: Viewport = {

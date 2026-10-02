@@ -3,10 +3,10 @@
   --fg: #1a1a1a;
   --muted: #6b6b6b;
   --border: #e5e2dc;
-  --claude: #d97706;
-  --claude-bg: #fff7ed;
-  --gpt: #059669;
-  --gpt-bg: #ecfdf5;
+  --pep: #e2552d;
+  --pep-bg: #fdf0ea;
+  --tuck: #3b5b7a;
+  --tuck-bg: #eef3f8;
   --user-bg: #1a1a1a;
   --user-fg: #ffffff;
 }
@@ -98,16 +98,16 @@ body {
   color: var(--user-fg);
 }
 
-.bubble-claude {
+.bubble-pep {
   align-self: flex-start;
-  background: var(--claude-bg);
-  border-color: color-mix(in srgb, var(--claude) 30%, var(--border));
+  background: var(--pep-bg);
+  border-color: color-mix(in srgb, var(--pep) 30%, var(--border));
 }
 
-.bubble-gpt {
+.bubble-tuck {
   align-self: flex-start;
-  background: var(--gpt-bg);
-  border-color: color-mix(in srgb, var(--gpt) 30%, var(--border));
+  background: var(--tuck-bg);
+  border-color: color-mix(in srgb, var(--tuck) 30%, var(--border));
 }
 
 .bubble-bottom {
@@ -137,23 +137,33 @@ body {
 }
 
 .avatar {
+  align-items: center;
   border-radius: 50%;
-  display: inline-block;
-  height: 14px;
-  width: 14px;
+  display: inline-flex;
+  font-size: 11px;
+  height: 20px;
+  justify-content: center;
+  width: 20px;
 }
 
-.avatar-claude {
-  background: var(--claude);
+.avatar-pep {
+  background: var(--pep);
 }
 
-.avatar-gpt {
-  background: var(--gpt);
+.avatar-tuck {
+  background: var(--tuck);
 }
 
 .bubble-name {
+  display: block;
   font-size: 13px;
   font-weight: 600;
+}
+
+.bubble-subtitle {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
 }
 
 .chip {

@@ -65,19 +65,19 @@ const turns = (...stances: Array<DebateTurn["stance"]>) =>
 describe("transcriptPrompt", () => {
   it("contains every turn in order plus the speaker and last speaker names", () => {
     const debateTurns = [
-      { speaker: "claude" as const, text: "First answer" },
-      { speaker: "gpt" as const, text: "Pushback" },
-      { speaker: "claude" as const, text: "Rebuttal" },
+      { speaker: "pep" as const, text: "First answer" },
+      { speaker: "tuck" as const, text: "Pushback" },
+      { speaker: "pep" as const, text: "Rebuttal" },
     ];
-    const prompt = transcriptPrompt("Q?", "gpt", debateTurns);
+    const prompt = transcriptPrompt("Q?", "tuck", debateTurns);
     const firstIdx = prompt.indexOf("First answer");
     const pushIdx = prompt.indexOf("Pushback");
     const rebuttalIdx = prompt.indexOf("Rebuttal");
     assert.ok(firstIdx !== -1 && pushIdx > firstIdx && rebuttalIdx > pushIdx);
-    assert.ok(prompt.includes("**Claude:**"));
-    assert.ok(prompt.includes("**GPT:**"));
-    assert.ok(prompt.includes("You are GPT."));
-    assert.ok(prompt.includes("Claude's latest message"));
+    assert.ok(prompt.includes("**Pep:**"));
+    assert.ok(prompt.includes("**Tuck:**"));
+    assert.ok(prompt.includes("You are Tuck."));
+    assert.ok(prompt.includes("Pep's latest message"));
   });
 });
 

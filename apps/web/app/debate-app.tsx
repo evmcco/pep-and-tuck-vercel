@@ -13,13 +13,13 @@ import {
   type Stance,
 } from "../../../agent/lib/debate";
 
-const speakers: Record<Speaker, { name: string }> = {
-  claude: { name: SPEAKER_NAMES.claude },
-  gpt: { name: SPEAKER_NAMES.gpt },
+const speakers: Record<Speaker, { name: string; subtitle: string }> = {
+  pep: { name: SPEAKER_NAMES.pep, subtitle: "fiery little sister · GPT" },
+  tuck: { name: SPEAKER_NAMES.tuck, subtitle: "steadfast big brother · Claude" },
 };
 
 function isSpeaker(value: string): value is Speaker {
-  return value === "claude" || value === "gpt";
+  return value === "pep" || value === "tuck";
 }
 
 const STANCE_LABELS: Record<Stance, string> = {
@@ -222,8 +222,8 @@ export function DebateApp() {
   return (
     <div className="debate-shell">
       <header className="debate-header">
-        <h1>eve debate</h1>
-        <p>Ask anything. One agent answers, the other jumps in.</p>
+        <h1>Pep & Tuck</h1>
+        <p>Ask anything. One pup answers, the other jumps in.</p>
         <button className="debate-new-chat" onClick={newChat} type="button">
           New chat
         </button>
@@ -231,7 +231,9 @@ export function DebateApp() {
 
       <main aria-live="polite" className="debate-transcript">
         {items.length === 0 ? (
-          <p className="debate-empty">No messages yet — ask a question to start the debate.</p>
+          <p className="debate-empty">
+            No messages yet — ask a question and let Pep and Tuck hash it out.
+          </p>
         ) : null}
 
         {items.map((item) => {
@@ -255,8 +257,13 @@ export function DebateApp() {
           return (
             <div className={`bubble bubble-${item.speaker}`} key={item.id}>
               <div className="bubble-heading">
-                <span aria-hidden="true" className={`avatar avatar-${item.speaker}`} />
-                <span className="bubble-name">{speakers[item.speaker].name}</span>
+                <span aria-hidden="true" className={`avatar avatar-${item.speaker}`}>
+                  🐕
+                </span>
+                <span>
+                  <span className="bubble-name">{speakers[item.speaker].name}</span>
+                  <span className="bubble-subtitle">{speakers[item.speaker].subtitle}</span>
+                </span>
                 {item.jumpsIn ? <span className="chip chip-jumps">jumps in</span> : null}
                 {item.stance ? (
                   <span className={`chip chip-${item.stance}`}>{STANCE_LABELS[item.stance]}</span>

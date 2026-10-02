@@ -17,7 +17,7 @@ import {
 
 async function pickOpener(): Promise<Speaker> {
   "use step";
-  return Math.random() < 0.5 ? "claude" : "gpt";
+  return Math.random() < 0.5 ? "pep" : "tuck";
 }
 
 function replyText(reply: unknown): string {
@@ -35,7 +35,7 @@ function replyText(reply: unknown): string {
 
 export default defineWorkflowTool({
   description:
-    "Run a friendly back-and-forth debate about the user's question between Claude and GPT, and return the transcript.",
+    "Run a friendly back-and-forth debate about the user's question between Pep and Tuck, and return the transcript.",
   inputSchema: z.object({
     question: z.string(),
     context: z.string().optional(),

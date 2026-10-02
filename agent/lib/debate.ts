@@ -1,11 +1,11 @@
 export const MAX_TURNS = 5;
 
-export const SPEAKERS = ["claude", "gpt"] as const;
+export const SPEAKERS = ["pep", "tuck"] as const;
 export type Speaker = (typeof SPEAKERS)[number];
 
 export const SPEAKER_NAMES: Record<Speaker, string> = {
-  claude: "Claude",
-  gpt: "GPT",
+  pep: "Pep",
+  tuck: "Tuck",
 };
 
 export type Stance = "agree" | "partial" | "disagree";
@@ -24,7 +24,7 @@ export type DebateResult = {
 };
 
 export function otherSpeaker(speaker: Speaker): Speaker {
-  return speaker === "claude" ? "gpt" : "claude";
+  return speaker === "pep" ? "tuck" : "pep";
 }
 
 const STANCE_LINE = /(^|\n)\s*STANCE:\s*(agree|partial|disagree)\b[^\n]*$/i;
@@ -68,7 +68,7 @@ export function openingPrompt(question: string, context?: string): string {
   const prior = context?.trim()
     ? `\n\nEarlier in this chat, for context:\n${context.trim()}`
     : "";
-  return `The user asked: ${question}${prior}\n\nAnswer the user. You are opening the debate; ${SPEAKER_NAMES.gpt} or ${SPEAKER_NAMES.claude} will push back on your answer next.`;
+  return `The user asked: ${question}${prior}\n\nAnswer the user. You are opening the debate; ${SPEAKER_NAMES.pep} or ${SPEAKER_NAMES.tuck} will push back on your answer next.`;
 }
 
 export function challengerPrompt(
