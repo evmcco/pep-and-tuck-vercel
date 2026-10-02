@@ -78,6 +78,14 @@ export function challengerPrompt(
   return `The user asked: ${question}\n\n${openerName} answered:\n${openerAnswer}\n\nYour turn. Engage with what ${openerName} actually said.`;
 }
 
-export function relayPrompt(otherName: string, otherReply: string): string {
-  return `${otherName} replied:\n${otherReply}\n\nYour turn.`;
+export function transcriptPrompt(
+  question: string,
+  speaker: Speaker,
+  turns: readonly Pick<DebateTurn, "speaker" | "text">[],
+): string {
+  const transcript = turns
+    .map((turn) => `**${SPEAKER_NAMES[turn.speaker]}:**\n${turn.text}`)
+    .join("\n\n");
+  const last = turns[turns.length - 1];
+  return `The user asked: ${question}\n\nThe debate so far:\n\n${transcript}\n\nYou are ${SPEAKER_NAMES[speaker]}. Reply to ${SPEAKER_NAMES[last.speaker]}'s latest message. Build on the discussion; don't repeat points you already made.`;
 }

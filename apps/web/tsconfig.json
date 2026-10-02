@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "plugins": [
       {
@@ -23,7 +24,7 @@
   "include": [
     "next-env.d.ts",
     ".next/types/**/*.ts",
-    "agent/**/*.ts",
+    "../../agent/**/*.ts",
     "app/**/*.ts",
     "app/**/*.tsx",
     "evals/**/*.ts",

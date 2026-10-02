@@ -6,10 +6,10 @@ import {
   openingPrompt,
   otherSpeaker,
   parseStance,
-  relayPrompt,
   shouldContinue,
   SPEAKER_NAMES,
   stripStance,
+  transcriptPrompt,
   type DebateResult,
   type DebateTurn,
   type Speaker,
@@ -18,6 +18,19 @@ import {
 async function pickOpener(): Promise<Speaker> {
   "use step";
   return Math.random() < 0.5 ? "claude" : "gpt";
+}
+
+function replyText(reply: unknown): string {
+  if (typeof reply === "string") return reply;
+  if (
+    reply !== null &&
+    typeof reply === "object" &&
+    "message" in reply &&
+    typeof reply.message === "string"
+  ) {
+    return reply.message;
+  }
+  return "";
 }
 
 export default defineWorkflowTool({
@@ -31,36 +44,30 @@ export default defineWorkflowTool({
     "use workflow";
 
     const opener = await pickOpener();
-    const sessions: Record<Speaker, ReturnType<typeof ctx.agent>> = {
-      [opener]: ctx.agent(opener),
-      [otherSpeaker(opener)]: ctx.agent(otherSpeaker(opener)),
-    };
-
     const turns: DebateTurn[] = [];
     let errored = false;
 
     while (shouldContinue(turns)) {
       const speaker: Speaker =
         turns.length === 0 ? opener : otherSpeaker(turns[turns.length - 1].speaker);
-      const previous = turns[turns.length - 1];
       const prompt =
         turns.length === 0
           ? openingPrompt(question, context)
           : turns.length === 1
-            ? challengerPrompt(question, SPEAKER_NAMES[opener], previous.text)
-            : relayPrompt(SPEAKER_NAMES[previous.speaker], previous.text);
+            ? challengerPrompt(question, SPEAKER_NAMES[opener], turns[0].text)
+            : transcriptPrompt(question, speaker, turns);
 
       try {
-        const response = await sessions[speaker].send(prompt, { signal: ctx.abortSignal });
-        const result = await response.result();
-        if (result.status === "failed" || !result.message) {
+        const reply = await ctx.agent(speaker, { message: prompt });
+        const message = replyText(reply);
+        if (!message) {
           errored = true;
           break;
         }
         turns.push({
           speaker,
-          text: stripStance(result.message),
-          stance: parseStance(result.message),
+          text: stripStance(message),
+          stance: parseStance(message),
         });
       } catch {
         errored = true;
