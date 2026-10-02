@@ -56,8 +56,14 @@ apps/web/             Next.js chat UI
 
 ```sh
 pnpm install
-pnpm dev        # Next.js dev server; the eve API is mounted under /eve/v1/*
+pnpm dev
 ```
+
+`pnpm dev` runs `next dev apps/web`. During development `apps/web/next.config.ts`
+wraps the config with `withEve` from `eve/next`, which starts `eve dev --no-ui`
+on a free port and rewrites `/eve/v1/*` to it, so the UI and the eve API share
+`http://localhost:3000`. On Vercel, production routing is owned by the root
+`vercel.ts` service graph and the plugin is not applied.
 
 Models go through Vercel AI Gateway. Either set `AI_GATEWAY_API_KEY` in
 `.env.local`, or link the project with `pnpm exec eve link`.
