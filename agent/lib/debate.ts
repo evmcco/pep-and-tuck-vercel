@@ -20,6 +20,7 @@ export type DebateResult = {
   opener: Speaker;
   turns: DebateTurn[];
   endedBy: "agreement" | "max_turns" | "error";
+  next: string;
 };
 
 export function otherSpeaker(speaker: Speaker): Speaker {

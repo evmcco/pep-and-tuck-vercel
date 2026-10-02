@@ -81,6 +81,11 @@ export default defineWorkflowTool({
         ? "agreement"
         : "max_turns";
 
-    return { opener, turns, endedBy };
+    return {
+      opener,
+      turns,
+      endedBy,
+      next: "The debate is finished. Reply now with the one-sentence Bottom line. Do not call debate again.",
+    };
   },
 });
