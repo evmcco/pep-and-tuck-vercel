@@ -24,14 +24,12 @@ debate workflow tool
  opener ──► challenger ──► opener ──► challenger ──► …
 (Pep/Tuck)   relay each other's latest reply every turn
     │
-    ▼  ends early when a reply's STANCE is `agree`, capped at MAX_TURNS
+    ▼  always runs exactly MAX_TURNS turns
 root agent writes the one-line "Bottom line"
 ```
 
 Each debater keeps its own session history across the debate, so the workflow
-only relays the other agent's latest reply. Every reply ends with a
-`STANCE: agree|partial|disagree` line that the workflow parses (and the UI
-turns into a chip); the line is stripped before display.
+only relays the other agent's latest reply.
 
 The web app follows the root session, attaches to each child session announced
 by `agent.started`, and renders one bubble per debate turn, streamed live.
@@ -45,7 +43,7 @@ agent/
   channels/eve.ts     channel auth (OIDC + local dev + placeholder)
   tools/debate.ts     the workflow tool
   tools/agent.ts      disableTool() — no root-copy delegation
-  lib/debate.ts       MAX_TURNS, stance parsing, prompt builders, turn-loop decision
+  lib/debate.ts       MAX_TURNS, prompt builders, follow-up extraction
   lib/skills.ts       shared skill markdown
   lib/instructions.ts shared subagent instruction builder
   lib/debate.test.ts  unit tests (node --test)
@@ -79,7 +77,7 @@ answer in the composer, or press Skip. The answer (or the skip) is sent back
 with `agent.respond(...)` as structured `inputResponses` keyed by `requestId`.
 The challenger's next prompt then includes the question plus "The user
 replied: …" or "The user chose not to answer.", and the debate proceeds as
-usual (max `MAX_TURNS` turns, early stop on agreement).
+usual (always `MAX_TURNS` turns).
 
 ## Tuning
 

@@ -177,20 +177,6 @@ body {
   color: #92400e;
 }
 
-.chip-agree {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.chip-partial {
-  background: #e0e7ff;
-  color: #3730a3;
-}
-
-.chip-disagree {
-  background: #fee2e2;
-  color: #991b1b;
-}
 
 .bubble-text {
   font-size: 14px;

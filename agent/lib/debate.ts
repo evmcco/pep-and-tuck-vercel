@@ -8,12 +8,9 @@ export const SPEAKER_NAMES: Record<Speaker, string> = {
   tuck: "Tuck",
 };
 
-export type Stance = "agree" | "partial" | "disagree";
-
 export type DebateTurn = {
   speaker: Speaker;
   text: string;
-  stance: Stance;
 };
 
 export type FollowUp = {
@@ -24,7 +21,7 @@ export type FollowUp = {
 export type DebateResult = {
   opener: Speaker;
   turns: DebateTurn[];
-  endedBy: "agreement" | "max_turns" | "error";
+  endedBy: "complete" | "error";
   followUp: FollowUp | null;
   next: string;
 };
@@ -33,21 +30,7 @@ export function otherSpeaker(speaker: Speaker): Speaker {
   return speaker === "pep" ? "tuck" : "pep";
 }
 
-const STANCE_LINE = /(^|\n)\s*STANCE:\s*(agree|partial|disagree)\b[^\n]*$/i;
-const STANCE_WORD = "STANCE";
-
-export function parseStance(text: string): Stance {
-  const match = text.trimEnd().match(STANCE_LINE);
-  const value = match?.[2]?.toLowerCase();
-  if (value === "agree" || value === "partial" || value === "disagree") return value;
-  return "partial";
-}
-
-export function stripStance(text: string): string {
-  return text.replace(STANCE_LINE, "").trimEnd();
-}
-
-const MARKER_WORDS = [STANCE_WORD, "FOLLOW-UP", "FOLLOW UP"];
+const MARKER_WORDS = ["FOLLOW-UP", "FOLLOW UP"];
 
 function isMarkerish(line: string): boolean {
   const upper = line.trim().replace(/^\*+/, "").toUpperCase();
@@ -62,14 +45,10 @@ export function stripMarkersStreaming(text: string): string {
   return isMarkerish(tail) ? text.slice(0, newline).trimEnd() : text;
 }
 
-export function stripStanceStreaming(text: string): string {
-  return stripMarkersStreaming(text);
-}
-
 const FOLLOWUP_LINE = /(^|\n)\s*\**\s*FOLLOW[- ]?UP\s*\**\s*:\s*\**\s*(.+?)\s*\**\s*$/i;
 
 export function extractFollowUp(text: string): { text: string; question: string | undefined } {
-  const stripped = stripStance(text);
+  const stripped = text.trimEnd();
   const match = stripped.match(FOLLOWUP_LINE);
   if (!match) return { text: stripped, question: undefined };
   const question = match[2]?.replace(/^\*+|\*+$/g, "").trim();
@@ -77,21 +56,11 @@ export function extractFollowUp(text: string): { text: string; question: string 
   return { text: stripped.replace(FOLLOWUP_LINE, "").trimEnd(), question };
 }
 
-export function shouldContinue(
-  turns: readonly Pick<DebateTurn, "stance">[],
-  maxTurns: number = MAX_TURNS,
-): boolean {
-  if (turns.length >= maxTurns) return false;
-  const last = turns[turns.length - 1];
-  if (turns.length >= 2 && last?.stance === "agree") return false;
-  return true;
-}
-
 export function openingPrompt(question: string, context?: string): string {
   const prior = context?.trim()
     ? `\n\nEarlier in this chat, for context:\n${context.trim()}`
     : "";
-  return `The user asked: ${question}${prior}\n\nAnswer the user. You are opening the debate; your sibling will push back on your answer next. Then ask the user exactly one short follow-up question whose answer would most improve your advice (their situation, constraints, or what they meant). Put it on the final line in exactly this format:\nFOLLOW-UP: <your question>\nDo not add a STANCE line.`;
+  return `The user asked: ${question}${prior}\n\nAnswer the user. You are opening the debate; your sibling will push back on your answer next. Then ask the user exactly one short follow-up question whose answer would most improve your advice (their situation, constraints, or what they meant). Put it on the final line in exactly this format:\nFOLLOW-UP: <your question>`;
 }
 
 export function followUpBlock(openerName: string, followUp: FollowUp): string {

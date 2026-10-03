@@ -6,11 +6,9 @@ import { useEveAgent } from "eve/react";
 import { useCallback, useRef, useState } from "react";
 
 import {
-  parseStance,
   SPEAKER_NAMES,
   stripMarkersStreaming,
   type Speaker,
-  type Stance,
 } from "../../../agent/lib/debate";
 
 const speakers: Record<Speaker, { name: string; subtitle: string }> = {
@@ -22,18 +20,11 @@ function isSpeaker(value: string): value is Speaker {
   return value === "pep" || value === "tuck";
 }
 
-const STANCE_LABELS: Record<Stance, string> = {
-  agree: "Agrees",
-  partial: "Partly agrees",
-  disagree: "Disagrees",
-};
-
 type TurnItem = {
   id: number;
   kind: "turn";
   speaker: Speaker;
   text: string;
-  stance?: Stance;
   streaming: boolean;
   jumpsIn: boolean;
   isOpener: boolean;
@@ -172,7 +163,6 @@ export function DebateApp() {
                     ? {
                         ...item,
                         text: stripMarkersStreaming(item.text),
-                        stance: item.isOpener ? undefined : parseStance(item.text),
                         streaming: false,
                         activity: undefined,
                       }
@@ -386,9 +376,6 @@ export function DebateApp() {
                   <span className="bubble-subtitle">{speakers[item.speaker].subtitle}</span>
                 </span>
                 {item.jumpsIn ? <span className="chip chip-jumps">jumps in</span> : null}
-                {item.stance && !item.isOpener ? (
-                  <span className={`chip chip-${item.stance}`}>{STANCE_LABELS[item.stance]}</span>
-                ) : null}
               </div>
               {item.activity ? <p className="bubble-activity">{item.activity}</p> : null}
               {item.text ? (

@@ -4,12 +4,10 @@ import { z } from "zod";
 import {
   challengerPrompt,
   extractFollowUp,
+  MAX_TURNS,
   openingPrompt,
   otherSpeaker,
-  parseStance,
-  shouldContinue,
   SPEAKER_NAMES,
-  stripStance,
   transcriptPrompt,
   type DebateResult,
   type DebateTurn,
@@ -76,7 +74,7 @@ export default defineWorkflowTool({
     let followUp: FollowUp | null = null;
     let errored = false;
 
-    while (shouldContinue(turns)) {
+    while (turns.length < MAX_TURNS) {
       const speaker: Speaker =
         turns.length === 0 ? opener : otherSpeaker(turns[turns.length - 1].speaker);
       const prompt =
@@ -95,14 +93,10 @@ export default defineWorkflowTool({
         }
         if (turns.length === 0) {
           const extracted = extractFollowUp(message);
-          turns.push({ speaker, text: extracted.text, stance: "partial" });
+          turns.push({ speaker, text: extracted.text });
           followUp = await askFollowUp(ctx, opener, extracted.question);
         } else {
-          turns.push({
-            speaker,
-            text: stripStance(message),
-            stance: parseStance(message),
-          });
+          turns.push({ speaker, text: message.trimEnd() });
         }
       } catch {
         errored = true;
@@ -110,11 +104,7 @@ export default defineWorkflowTool({
       }
     }
 
-    const endedBy: DebateResult["endedBy"] = errored
-      ? "error"
-      : turns.length >= 2 && turns[turns.length - 1].stance === "agree"
-        ? "agreement"
-        : "max_turns";
+    const endedBy: DebateResult["endedBy"] = errored ? "error" : "complete";
 
     return {
       opener,
