@@ -223,6 +223,7 @@ export function DebateApp() {
         for (const resolution of event.data.resolutions) {
           pendingAskRef.current = undefined;
           const response = resolution.response;
+          if (resolution.outcome === "answered" && response === undefined) continue;
           const answered =
             resolution.outcome === "answered" &&
             response !== undefined &&
@@ -276,7 +277,7 @@ export function DebateApp() {
 
   const submit = () => {
     const textarea = textareaRef.current;
-    if (!textarea || busy) return;
+    if (!textarea) return;
     if (!textarea.reportValidity()) return;
 
     const message = textarea.value.trim();
@@ -287,6 +288,7 @@ export function DebateApp() {
       respondToAsk(pendingAsk, message);
       return;
     }
+    if (busy) return;
 
     appendItem({ kind: "user", text: message });
     questionOpenerRef.current = undefined;
