@@ -213,6 +213,26 @@ body {
   margin: 4px 0;
 }
 
+.ask-hint,
+.ask-skipped {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+  margin: 6px 0 0;
+}
+
+.composer-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.composer-footer .button-skip {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--fg);
+}
+
 .debate-error {
   color: #991b1b;
   font-size: 13px;

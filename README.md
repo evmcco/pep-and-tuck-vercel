@@ -70,6 +70,17 @@ on a free port and rewrites `/eve/v1/*` to it, so the UI and the eve API share
 Models go through Vercel AI Gateway. Either set `AI_GATEWAY_API_KEY` in
 `.env.local`, or link the project with `pnpm exec eve link`.
 
+## Follow-up question
+
+After the opener answers, the debate pauses: the workflow calls `ctx.ask()`
+(`agent/tools/debate.ts`), which parks the session on `input.requested` until
+the user replies. In the UI this shows up as an "asks you" card — type an
+answer in the composer, or press Skip. The answer (or the skip) is sent back
+with `agent.respond(...)` as structured `inputResponses` keyed by `requestId`.
+The challenger's next prompt then includes the question plus "The user
+replied: …" or "The user chose not to answer.", and the debate proceeds as
+usual (max `MAX_TURNS` turns, early stop on agreement).
+
 ## Tuning
 
 - Models: `agent/agent.ts` (moderator), `agent/subagents/pep/agent.ts`,

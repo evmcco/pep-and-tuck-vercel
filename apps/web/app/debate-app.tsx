@@ -8,7 +8,7 @@ import { useCallback, useRef, useState } from "react";
 import {
   parseStance,
   SPEAKER_NAMES,
-  stripStanceStreaming,
+  stripMarkersStreaming,
   type Speaker,
   type Stance,
 } from "../../../agent/lib/debate";
@@ -36,17 +36,30 @@ type TurnItem = {
   stance?: Stance;
   streaming: boolean;
   jumpsIn: boolean;
+  isOpener: boolean;
   activity?: string;
+};
+
+type AskItem = {
+  id: number;
+  kind: "ask";
+  speaker: Speaker;
+  prompt: string;
+  requestId: string;
+  status: "pending" | "answered" | "skipped";
+  answer?: string;
 };
 
 type ChatItem =
   | { id: number; kind: "user"; text: string }
   | TurnItem
+  | AskItem
   | { id: number; kind: "bottom"; text: string };
 
 type NewChatItem =
   | { kind: "user"; text: string }
   | Omit<TurnItem, "id">
+  | Omit<AskItem, "id">
   | { kind: "bottom"; text: string };
 
 type ChildStreamState = {
@@ -57,15 +70,25 @@ type ChildStreamState = {
 export function DebateApp() {
   const [client] = useState(() => new Client({ host: "" }));
   const [items, setItems] = useState<ChatItem[]>([]);
+  const [respondError, setRespondError] = useState<string | undefined>(undefined);
   const nextIdRef = useRef(0);
   const runIdRef = useRef(0);
   const childrenRef = useRef(new Map<string, ChildStreamState>());
-  const firstSpeakerRef = useRef<Speaker | undefined>(undefined);
+  const questionOpenerRef = useRef<Speaker | undefined>(undefined);
   const greetedRef = useRef(new Set<Speaker>());
+  const pendingAskRef = useRef<string | undefined>(undefined);
 
   const updateItem = useCallback((id: number, patch: Partial<TurnItem>) => {
     setItems((current) =>
       current.map((item) => (item.id === id && item.kind === "turn" ? { ...item, ...patch } : item)),
+    );
+  }, []);
+
+  const updateAsk = useCallback((requestId: string, patch: Partial<AskItem>) => {
+    setItems((current) =>
+      current.map((item) =>
+        item.kind === "ask" && item.requestId === requestId ? { ...item, ...patch } : item,
+      ),
     );
   }, []);
 
@@ -85,13 +108,15 @@ export function DebateApp() {
         if (state.openItemId !== undefined) return state.openItemId;
         const isFirstTurnForSpeaker = !greetedRef.current.has(speaker);
         greetedRef.current.add(speaker);
-        const jumpsIn = isFirstTurnForSpeaker && firstSpeakerRef.current !== speaker;
+        const isOpener = questionOpenerRef.current === speaker;
+        const jumpsIn = isFirstTurnForSpeaker && !isOpener;
         state.openItemId = appendItem({
           kind: "turn",
           speaker,
           text: "",
           streaming: true,
           jumpsIn,
+          isOpener,
         });
         return state.openItemId;
       };
@@ -146,8 +171,8 @@ export function DebateApp() {
                   item.id === id && item.kind === "turn"
                     ? {
                         ...item,
-                        text: stripStanceStreaming(item.text),
-                        stance: parseStance(item.text),
+                        text: stripMarkersStreaming(item.text),
+                        stance: item.isOpener ? undefined : parseStance(item.text),
                         streaming: false,
                         activity: undefined,
                       }
@@ -175,19 +200,51 @@ export function DebateApp() {
     (event: MessageStreamEvent) => {
       if (event.type === "subagent.called" && isSpeaker(event.data.name)) {
         const speaker = event.data.name;
-        firstSpeakerRef.current ??= speaker;
+        questionOpenerRef.current ??= speaker;
         void streamChild(speaker, event.data.childSessionId, runIdRef.current);
+      }
+
+      if (event.type === "input.requested") {
+        for (const request of event.data.requests) {
+          if (request.kind !== "question") continue;
+          const speaker = questionOpenerRef.current ?? "pep";
+          pendingAskRef.current = request.requestId;
+          appendItem({
+            kind: "ask",
+            speaker,
+            prompt: request.prompt,
+            requestId: request.requestId,
+            status: "pending",
+          });
+        }
+      }
+
+      if (event.type === "input.resolved") {
+        for (const resolution of event.data.resolutions) {
+          pendingAskRef.current = undefined;
+          const response = resolution.response;
+          const answered =
+            resolution.outcome === "answered" &&
+            response !== undefined &&
+            response.optionId !== "skip" &&
+            !!response.text?.trim();
+          updateAsk(resolution.requestId, {
+            status: answered ? "answered" : "skipped",
+            answer: answered ? response?.text?.trim() : undefined,
+          });
+        }
       }
 
       if (
         event.type === "message.completed" &&
         event.data.message &&
-        event.data.finishReason !== "tool-calls"
+        event.data.finishReason !== "tool-calls" &&
+        pendingAskRef.current === undefined
       ) {
         appendItem({ kind: "bottom", text: event.data.message });
       }
     },
-    [appendItem, streamChild],
+    [appendItem, updateAsk, streamChild],
   );
 
   const agent = useEveAgent({ onEvent: handleEvent });
@@ -195,7 +252,27 @@ export function DebateApp() {
   const activeSpeaker = [...items].reverse().find(
     (item): item is TurnItem => item.kind === "turn" && item.streaming,
   )?.speaker;
+  const pendingAsk = [...items].reverse().find(
+    (item): item is AskItem => item.kind === "ask" && item.status === "pending",
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const respondToAsk = (ask: AskItem, text?: string) => {
+    const optimistic: Partial<AskItem> =
+      text === undefined ? { status: "skipped" } : { status: "answered", answer: text };
+    updateAsk(ask.requestId, optimistic);
+    setRespondError(undefined);
+    pendingAskRef.current = undefined;
+    const responses =
+      text === undefined
+        ? [{ requestId: ask.requestId, optionId: "skip" }]
+        : [{ requestId: ask.requestId, text }];
+    void Promise.resolve(agent.respond(responses)).catch((error: unknown) => {
+      pendingAskRef.current = ask.requestId;
+      updateAsk(ask.requestId, { status: "pending", answer: undefined });
+      setRespondError(error instanceof Error ? error.message : String(error));
+    });
+  };
 
   const submit = () => {
     const textarea = textareaRef.current;
@@ -205,7 +282,17 @@ export function DebateApp() {
     const message = textarea.value.trim();
     if (message.length === 0) return;
 
+    if (pendingAsk) {
+      textarea.value = "";
+      respondToAsk(pendingAsk, message);
+      return;
+    }
+
     appendItem({ kind: "user", text: message });
+    questionOpenerRef.current = undefined;
+    greetedRef.current.clear();
+    pendingAskRef.current = undefined;
+    setRespondError(undefined);
     textarea.value = "";
     void agent.send(message);
   };
@@ -213,8 +300,10 @@ export function DebateApp() {
   const newChat = () => {
     runIdRef.current += 1;
     childrenRef.current.clear();
-    firstSpeakerRef.current = undefined;
+    questionOpenerRef.current = undefined;
     greetedRef.current.clear();
+    pendingAskRef.current = undefined;
+    setRespondError(undefined);
     setItems([]);
     agent.reset();
   };
@@ -245,6 +334,36 @@ export function DebateApp() {
             );
           }
 
+          if (item.kind === "ask") {
+            return (
+              <div key={item.id}>
+                <div className={`bubble bubble-ask bubble-${item.speaker}`}>
+                  <div className="bubble-heading">
+                    <span aria-hidden="true" className={`avatar avatar-${item.speaker}`}>
+                      🐕
+                    </span>
+                    <span>
+                      <span className="bubble-name">{speakers[item.speaker].name}</span>
+                      <span className="bubble-subtitle">asks you</span>
+                    </span>
+                  </div>
+                  <MarkdownClient className="bubble-text" value={item.prompt} />
+                  {item.status === "pending" ? (
+                    <p className="ask-hint">Reply below, or skip.</p>
+                  ) : null}
+                  {item.status === "skipped" ? (
+                    <p className="ask-skipped">You skipped this question.</p>
+                  ) : null}
+                </div>
+                {item.status === "answered" && item.answer !== undefined ? (
+                  <div className="bubble bubble-user">
+                    <MarkdownClient className="bubble-text" value={item.answer} />
+                  </div>
+                ) : null}
+              </div>
+            );
+          }
+
           if (item.kind === "bottom") {
             return (
               <div className="bubble bubble-bottom" key={item.id}>
@@ -265,7 +384,7 @@ export function DebateApp() {
                   <span className="bubble-subtitle">{speakers[item.speaker].subtitle}</span>
                 </span>
                 {item.jumpsIn ? <span className="chip chip-jumps">jumps in</span> : null}
-                {item.stance ? (
+                {item.stance && !item.isOpener ? (
                   <span className={`chip chip-${item.stance}`}>{STANCE_LABELS[item.stance]}</span>
                 ) : null}
               </div>
@@ -274,7 +393,7 @@ export function DebateApp() {
                 <MarkdownClient
                   className="bubble-text"
                   streaming={item.streaming}
-                  value={stripStanceStreaming(item.text)}
+                  value={stripMarkersStreaming(item.text)}
                 />
               ) : item.streaming ? (
                 <p className="bubble-typing">typing…</p>
@@ -283,13 +402,18 @@ export function DebateApp() {
           );
         })}
 
-        {busy && activeSpeaker === undefined ? (
+        {busy && activeSpeaker === undefined && pendingAsk === undefined ? (
           <p className="bubble-typing debate-pending">thinking…</p>
         ) : null}
 
         {agent.error ? (
           <p className="debate-error" role="alert">
             {agent.error.message}
+          </p>
+        ) : null}
+        {respondError ? (
+          <p className="debate-error" role="alert">
+            {respondError}
           </p>
         ) : null}
       </main>
@@ -306,7 +430,7 @@ export function DebateApp() {
         </label>
         <textarea
           autoComplete="off"
-          disabled={busy}
+          disabled={busy && pendingAsk === undefined}
           id="debate-prompt"
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -314,16 +438,29 @@ export function DebateApp() {
               submit();
             }
           }}
-          placeholder="Ask anything…"
+          placeholder={
+            pendingAsk ? `Answer ${speakers[pendingAsk.speaker].name}'s question…` : "Ask anything…"
+          }
           ref={textareaRef}
           required
           rows={3}
         />
         <div className="composer-footer">
           <span>Enter to send · Shift + Enter for a new line</span>
-          <button disabled={busy} type="submit">
-            {busy ? "Debating…" : "Send"}
-          </button>
+          <div className="composer-actions">
+            {pendingAsk ? (
+              <button
+                className="button-skip"
+                onClick={() => respondToAsk(pendingAsk)}
+                type="button"
+              >
+                Skip
+              </button>
+            ) : null}
+            <button disabled={busy && pendingAsk === undefined} type="submit">
+              {pendingAsk ? "Answer" : busy ? "Debating…" : "Send"}
+            </button>
+          </div>
         </div>
       </form>
     </div>

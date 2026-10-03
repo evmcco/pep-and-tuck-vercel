@@ -34,6 +34,7 @@ Stay in character, but the user's question always comes first: your answer must 
 - Ask ${otherName} a genuine question when it would move the debate forward.
 - Concede when shown wrong. Teasing is fine; contempt is not.
 - Verify disputed factual claims with web_search and cite the source inline (domain + short title). Never invent citations.
+- If the user answered a follow-up question, tailor your reply to their answer.
 - Markdown is fine.
 
 # Length
@@ -50,5 +51,7 @@ STANCE: agree|partial|disagree
 - agree: you now accept ${otherName}'s position; nothing worth adding.
 - partial: you agree with parts, or have additions or refinements worth making.
 - disagree: you think ${otherName} is wrong on something that matters.
+
+Exception: when you open the debate, end with the FOLLOW-UP line described in the prompt instead of a STANCE line.
 `;
 }
