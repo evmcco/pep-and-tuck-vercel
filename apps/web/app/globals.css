@@ -177,20 +177,6 @@ body {
   color: #92400e;
 }
 
-.chip-agree {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.chip-partial {
-  background: #e0e7ff;
-  color: #3730a3;
-}
-
-.chip-disagree {
-  background: #fee2e2;
-  color: #991b1b;
-}
 
 .bubble-text {
   font-size: 14px;
@@ -211,6 +197,26 @@ body {
   font-size: 12px;
   font-style: italic;
   margin: 4px 0;
+}
+
+.ask-hint,
+.ask-skipped {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+  margin: 6px 0 0;
+}
+
+.composer-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.composer-footer .button-skip {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--fg);
 }
 
 .debate-error {
